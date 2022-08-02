@@ -163,7 +163,7 @@ class NowInventory(object):
             return inventory
 
         # build url
-        url = "https://%s/%s" % (self.hostname, path)
+        url = f"https://{self.hostname}/{path}"
         results = []
 
         while url:
@@ -203,7 +203,7 @@ class NowInventory(object):
         if target not in self.inventory['_meta']['hostvars']:
             self.inventory['_meta']['hostvars'][target] = {}
 
-        self.inventory['_meta']['hostvars'][target]["sn_" + key] = val
+        self.inventory['_meta']['hostvars'][target][f"sn_{key}"] = val
         return
 
     def generate(self):
@@ -216,9 +216,12 @@ class NowInventory(object):
 
         columns = list(
             set(base_fields + base_groups + self.fields + self.groups))
-        path = '/api/now/table/' + self.table + options + \
-            "&sysparm_fields=" + ','.join(columns) + \
-            "&sysparm_query=" + self.filter_results
+        path = (
+            (f'/api/now/table/{self.table}{options}' + "&sysparm_fields=")
+            + ','.join(columns)
+            + "&sysparm_query="
+        ) + self.filter_results
+
 
         # Default, mandatory group 'sys_class_name'
         groups = list(set(base_groups + self.groups))
@@ -239,9 +242,8 @@ class NowInventory(object):
             if not selection:
                 selection = ['host_name', 'fqdn', 'ip_address']
             for k in selection:
-                if k in record:
-                    if record[k] != '':
-                        target = record[k]
+                if k in record and record[k] != '':
+                    target = record[k]
 
             # Skip if no target available
             if target is None:
